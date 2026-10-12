@@ -17,3 +17,7 @@ __pycache__
 /perf.data
 /perf.data.old
 /qemu*core
+
+# local build outputs
+*.com
+*.com.dbg

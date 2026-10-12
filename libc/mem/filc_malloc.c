@@ -61,8 +61,15 @@ int posix_memalign(void **res, size_t align, size_t len) {
   return 0;
 }
 
+/* memalign()/aligned_alloc(): unlike posix_memalign(), these accept any
+   power-of-two alignment, including 1, 2 and 4 (C17 7.22.3.1 after DR 460;
+   glibc and musl behave the same way).  Alignments at or below the GC
+   allocator's minimum are satisfied by zgc_aligned_alloc() falling back to
+   zgc_alloc().  C17 also dropped C11's "size must be a multiple of
+   alignment" rule, so that is deliberately NOT enforced here: enforcing it
+   would reject calls like aligned_alloc(64, 100) that work on glibc/musl. */
 void *memalign(size_t align, size_t len) {
-  if (align < sizeof(void *) || (align & (align - 1))) {
+  if (!align || (align & (align - 1))) {
     errno = EINVAL;
     return 0;
   }
@@ -70,7 +77,7 @@ void *memalign(size_t align, size_t len) {
 }
 
 void *aligned_alloc(size_t align, size_t len) {
-  if (align < sizeof(void *) || (align & (align - 1))) {
+  if (!align || (align & (align - 1))) {
     errno = EINVAL;
     return 0;
   }
@@ -81,7 +88,16 @@ void *valloc(size_t len) {
   return zgc_aligned_alloc(4096, len);
 }
 
+/* pvalloc() must round the size up to a whole number of pages (and glibc
+   gives pvalloc(0) one page).  Without the rounding, the object's Fil-C
+   bounds are exactly `len`, and callers relying on the documented
+   page-granular size would trap when touching the rest of the page. */
 void *pvalloc(size_t len) {
+  if (len > (size_t)-1 - 4095) {
+    errno = ENOMEM;
+    return 0;
+  }
+  len = len ? (len + 4095) & ~(size_t)4095 : 4096;
   return zgc_aligned_alloc(4096, len);
 }
 

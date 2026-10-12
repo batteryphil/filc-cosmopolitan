@@ -48,6 +48,9 @@
 #include "libc/sock/struct/ifconf.h"
 #include "libc/sock/struct/ifreq.h"
 #include "libc/sock/struct/sockaddr.h"
+#ifdef __FILC__
+#include <stdfil.h>
+#endif
 #include "libc/str/str.h"
 #include "libc/sysv/consts/af.h"
 #include "libc/sysv/consts/fio.h"
@@ -510,6 +513,16 @@ static int ioctl_siocgifconf_sysv(int fd, struct ifconf *ifc) {
   struct ifreq *req;
   uint32_t bufLen, ip;
   if (IsLinux()) {
+#ifdef __FILC__
+    /* Fil-C: the runtime's ioctl guard only bounds-checks the outer struct
+       ifconf.  The kernel then follows ifc_buf on its own and writes up to
+       ifc_len bytes there, which bypasses ifc_buf's capability entirely
+       (verified: an 8-byte buffer with ifc_len=4096 received 120 bytes
+       with no trap).  Check the inner buffer here instead.  A NULL ifc_buf
+       is the legal "how big a buffer do I need?" query and is left alone. */
+    if (ifc->ifc_buf && ifc->ifc_len > 0)
+      zcheck(ifc->ifc_buf, (size_t)ifc->ifc_len);
+#endif
     return sys_ioctl(fd, SIOCGIFCONF, ifc);
   }
 #pragma GCC push_options
