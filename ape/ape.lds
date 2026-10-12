@@ -217,6 +217,7 @@ PHDRS {
   Tls PT_TLS FLAGS(PF_W|PF_R);
   Ram PT_LOAD FLAGS(PF_W|PF_R);
   stack PT_GNU_STACK FLAGS(PF_W|PF_R);
+  wxneeded 0x65A3DBE7 FLAGS(PF_X|PF_W|PF_R);
 }
 
 SECTIONS {
@@ -242,6 +243,7 @@ SECTIONS {
     /* ELF PT_NOTE data structures */
     . = ALIGN(. != 0 ? __SIZEOF_POINTER__ : 0);
     ape_note = .;
+    KEEP(*(.note.openbsd.ident))
     KEEP(*(.note.*))
     ape_note_end = .;
 
@@ -263,7 +265,7 @@ SECTIONS {
     KEEP(*(.ape.pad.head))
     . = ALIGN(. != 0 ? (SupportsWindows() || SupportsMetal() ? CONSTANT(COMMONPAGESIZE) : 16) : 0);
     _ehead = .;
-  } :Head
+  } :Head :wxneeded
 
 /*BEGIN: nt addressability guarantee */
 

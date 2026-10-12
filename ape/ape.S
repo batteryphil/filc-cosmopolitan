@@ -773,6 +773,18 @@ ape_phdrs:
 	.stub	ape_note_memsz,quad
 	.quad	4
 #endif
+
+#if SupportsOpenbsd()
+	.long	0x65a3dbe7		// PT_OPENBSD_WXNEEDED
+	.long	PF_R|PF_W|PF_X
+	.quad	0
+	.quad	0
+	.quad	0
+	.quad	0
+	.quad	0
+	.quad	0
+#endif
+
 	.previous
 #endif /* SupportsSystemv() || SupportsMetal() */
 
