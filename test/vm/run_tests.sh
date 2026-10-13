@@ -35,7 +35,7 @@ echo "### OS: $(uname -srm 2>/dev/null)"
 # loader instead (applies equally to the control).
 L=""
 if [ "$(uname -s)" = OpenBSD ] && [ -f ./ape-loader ]; then
-  chmod +x ./ape-loader; L="./ape-loader"
+  chmod +x ./ape-loader; command -v elfctl >/dev/null 2>&1 && elfctl -e +wx ./ape-loader 2>/dev/null || true; L="./ape-loader"
   echo "### launching via APE loader"
 fi
 # Control: an official upstream Cosmopolitan APE with no Fil-C in it.  If this

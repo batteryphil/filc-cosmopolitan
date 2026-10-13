@@ -144,6 +144,7 @@ COSMO_INC = \
 CFLAGS = $(TARGET_FLAG) -O2 -g -std=gnu23 \
  -DSUPPORT_VECTOR=1 -D_COSMO_SOURCE -DNDEBUG -DMODE=\"filc\" \
  $(ARCH_CFLAGS) \
+ -ffunction-sections -fdata-sections \
  -fno-omit-frame-pointer -fno-stack-protector -fwrapv \
  -fno-common -w \
  $(COSMO_INC)
@@ -158,6 +159,7 @@ CCXX = libc/str/iswlower.cc libc/str/iswupper.cc libc/str/iswseparator.cc
 CXXFLAGS = $(TARGET_FLAG) -O2 -g -std=gnu++20 \
  -DSUPPORT_VECTOR=1 -D_COSMO_SOURCE -DNDEBUG -DMODE=\"filc\" \
  $(ARCH_CFLAGS) \
+ -ffunction-sections -fdata-sections \
  -fno-omit-frame-pointer -fno-stack-protector -fwrapv \
  -fno-common -w -fno-exceptions -fno-rtti -nostdinc++ \
  $(COSMO_INC)
@@ -194,21 +196,21 @@ $(BUILD)/.shims.stamp: $(SHIM_DEPS)
 	FILCARCH=$(FILCARCH) python3 $(COSMO)/filc/gen_shims.py $(BUILD)/shims.c $(BUILD)/consts.c
 	@touch $@
 
-$(BUILD)/generated/shims.o: $(BUILD)/.shims.stamp | check-env
+$(BUILD)/generated/shims.o: $(BUILD)/.shims.stamp $(FORCE_PREREQ) | check-env
 	@mkdir -p $(dir $@)
 	@$(FILC_CLANG) $(CFLAGS) -c -o $@ $(BUILD)/shims.c \
 	    2>>$(BUILD)/compile-errors.log || { \
 	    echo "FAILED: shims.c (details in $(FILC_BUILDDIR)/compile-errors.log)" >&2; \
 	    exit 1; }
 
-$(BUILD)/generated/consts.o: $(BUILD)/.shims.stamp | check-env
+$(BUILD)/generated/consts.o: $(BUILD)/.shims.stamp $(FORCE_PREREQ) | check-env
 	@mkdir -p $(dir $@)
 	@$(FILC_CLANG) $(CFLAGS) -c -o $@ $(BUILD)/consts.c \
 	    2>>$(BUILD)/compile-errors.log || { \
 	    echo "FAILED: consts.c (details in $(FILC_BUILDDIR)/compile-errors.log)" >&2; \
 	    exit 1; }
 
-$(BUILD)/generated/errfuns.o: $(BUILD)/.shims.stamp | check-env
+$(BUILD)/generated/errfuns.o: $(BUILD)/.shims.stamp $(FORCE_PREREQ) | check-env
 	@mkdir -p $(dir $@)
 	@$(FILC_CLANG) $(CFLAGS) -c -o $@ $(BUILD)/errfuns.c \
 	    2>>$(BUILD)/compile-errors.log || { \
