@@ -30,13 +30,20 @@ run() {
 }
 
 echo "### OS: $(uname -srm 2>/dev/null)"
-# OpenBSD's ksh rejects the APE shell-script header ("NUL byte unexpected"),
-# so there every binary is launched through Cosmopolitan's standalone APE
-# loader instead (applies equally to the control).
+# On OpenBSD, ksh rejects the APE shell-script header ("NUL byte unexpected"),
+# and standalone ape-loader aborts on modern pinsyscalls.
+# Assimilating the binaries converts their headers in-place into native OpenBSD
+# ELF binaries, allowing the OpenBSD kernel to execute them directly.
 L=""
-if [ "$(uname -s)" = OpenBSD ] && [ -f ./ape-loader ]; then
-  chmod +x ./ape-loader; command -v elfctl >/dev/null 2>&1 && elfctl -e +wx ./ape-loader 2>/dev/null || true; L="./ape-loader"
-  echo "### launching via APE loader"
+if [ "$(uname -s)" = OpenBSD ]; then
+  echo "### assimilating APE binaries for OpenBSD native execution"
+  for bin in ./ape_*.com ./ctl_touch.ape; do
+    [ -f "$bin" ] || continue
+    sh "$bin" --assimilate 2>/dev/null || true
+    command -v elfctl >/dev/null 2>&1 && elfctl -e +wx "$bin" 2>/dev/null || true
+  done
+elif [ -f ./ape-loader ]; then
+  chmod +x ./ape-loader 2>/dev/null || true
 fi
 # Control: an official upstream Cosmopolitan APE with no Fil-C in it.  If this
 # fails too, the problem is the APE format/loader on this OS, not Fil-C.

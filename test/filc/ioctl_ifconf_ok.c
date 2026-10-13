@@ -13,14 +13,18 @@ int main(void) {
     return 2;
 
   struct ifconf ifc = {0};
-  ifc.ifc_buf = NULL;  // size query
-  if (ioctl(fd, SIOCGIFCONF, &ifc) != 0) {
-    perror("size query");
-    return 1;
+  int need = 0;
+  ifc.ifc_buf = NULL;  // size query (Linux)
+  if (ioctl(fd, SIOCGIFCONF, &ifc) == 0 && ifc.ifc_len > 0) {
+    need = ifc.ifc_len;
+    printf("size query: kernel needs %d bytes\n", need);
+  } else {
+    // BSDs (FreeBSD/NetBSD/OpenBSD) reject NULL ifc_buf with EINVAL; use standard size.
+    need = 1024;
+    printf("size query unsupported on this OS (BSD), using %d bytes\n", need);
   }
-  printf("size query: kernel needs %d bytes\n", ifc.ifc_len);
 
-  int need = ifc.ifc_len;
+  ifc.ifc_len = need;
   ifc.ifc_buf = malloc(need);
   if (ioctl(fd, SIOCGIFCONF, &ifc) != 0) {
     perror("fill");
