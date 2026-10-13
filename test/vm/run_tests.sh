@@ -32,14 +32,15 @@ run() {
 echo "### OS: $(uname -srm 2>/dev/null)"
 # On OpenBSD, ksh rejects the APE shell-script header ("NUL byte unexpected"),
 # and standalone ape-loader aborts on modern pinsyscalls.
-# Assimilating the binaries converts their headers in-place into native OpenBSD
-# ELF binaries, allowing the OpenBSD kernel to execute them directly.
+# Stripping the NUL-byte assignment via sed allows ksh to run the embedded
+# assimilation logic, transforming the file in-place into a native OpenBSD
+# ELF binary that the kernel executes directly.
 L=""
 if [ "$(uname -s)" = OpenBSD ]; then
   echo "### assimilating APE binaries for OpenBSD native execution"
   for bin in ./ape_*.com ./ctl_touch.ape; do
     [ -f "$bin" ] || continue
-    sh "$bin" --assimilate 2>/dev/null || true
+    sed -e '1,/^justine/d' -e "s|^o=.*|o='$bin'|" "$bin" | sh -s -- --assimilate 2>/dev/null || true
     command -v elfctl >/dev/null 2>&1 && elfctl -e +wx "$bin" 2>/dev/null || true
   done
 elif [ -f ./ape-loader ]; then
