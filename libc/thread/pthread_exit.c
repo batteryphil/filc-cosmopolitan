@@ -161,8 +161,11 @@ wontreturn void pthread_exit(void *rc) {
     exit(0);
   }
 
-  // this is a child thread: hand control (and the result value) back to
-  // libpizlo's thread machinery
+  // this is a child thread: clear tib_ctid and wake any timedjoin/tryjoin
+  // futex waiters (mirroring CLONE_CHILD_CLEARTID), then hand control (and
+  // the result value) back to libpizlo's thread machinery.
+  atomic_store_explicit(&tib->tib_ctid, 0, memory_order_release);
+  cosmo_futex_wake((atomic_int *)&tib->tib_ctid, INT_MAX, true);
   zthread_exit(rc);
 }
 

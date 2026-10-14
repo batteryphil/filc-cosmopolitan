@@ -23,7 +23,7 @@
 #include "libc/str/str.h"
 #ifndef __aarch64__
 
-#ifndef __chibicc__
+#if !defined(__chibicc__) && !defined(__FILC__)
 typedef char xmm_t __attribute__((__vector_size__(16), __aligned__(1)));
 typedef long long xmm_a __attribute__((__vector_size__(16), __aligned__(16)));
 static void *memset_sse(char *p, char c, size_t n) {
@@ -44,7 +44,7 @@ static void *memset_sse(char *p, char c, size_t n) {
 }
 #endif
 
-#if defined(__x86_64__) && !defined(__chibicc__)
+#if defined(__x86_64__) && !defined(__chibicc__) && !defined(__FILC__)
 _Microarchitecture("avx") static void *memset_avx(char *p, char c, size_t n) {
   char *t;
   xmm_t v = {c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c};
@@ -136,6 +136,10 @@ _Microarchitecture("avx") static void *memset_avx(char *p, char c, size_t n) {
  * @asyncsignalsafe
  */
 void *memset(void *p, int c, size_t n) {
+#ifdef __FILC__
+  __builtin_memset(p, c, n);
+  return p;
+#else
   char *b;
   uint32_t u;
   uint64_t x;
@@ -166,6 +170,7 @@ void *memset(void *p, int c, size_t n) {
   } else {
     return memset_sse(b, c, n);
   }
+#endif
 }
 
 #endif /* __aarch64__ */

@@ -62,7 +62,14 @@ struct CosmoTib {
   uint32_t tib_sigstack_flags;
   void *tib_nsync;
   void *tib_atexit;
+#ifdef __FILC__
+  intptr_t tib_events[1];
+  uint16_t tib_fenv_flags;
+  uint16_t tib_fenv_mask;
+  int32_t tib_fenv_round;
+#else
   intptr_t tib_events[2];
+#endif
   void *tib_sigjmpbuf;
   void *tib_vfork;
   void *tib_keys_static[37];

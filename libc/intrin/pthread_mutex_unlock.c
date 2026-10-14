@@ -103,7 +103,8 @@ static errno_t pthread_mutex_unlock_recursive_nsync(pthread_mutex_t *mutex) {
     }
 
     // actually unlock the mutex
-    mutex->_word = MUTEX_UNLOCK(word);
+    atomic_store_explicit(&mutex->_word, MUTEX_UNLOCK(word),
+                          memory_order_release);
     _weaken(nsync_mu_unlock)((nsync_mu *)mutex->_nsync);
     if (IsModeDbg())
       __deadlock_untrack(mutex);

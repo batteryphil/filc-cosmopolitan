@@ -64,20 +64,19 @@ static void filc_qsort_swap(char *a, char *b, size_t width) {
   /* NOTE: this has to go through memcpy(): Fil-C migrates the pointer
      metadata of a copied range only through real memcpy(), so swapping
      element bytes through a char loop corrupts any pointer-typed fields
-     (the runtime later rejects the moved pointers). */
+     (the runtime later rejects the moved pointers).  Swap in 64-byte
+     stack chunks (16-byte capability aligned) so large elements never
+     touch malloc() or silently fail on OOM. */
   char tmp[64];
-  char *heap = 0;
-  if (width > sizeof(tmp)) {
-    heap = (char *)malloc(width);
-    if (!heap)
-      return;
-    memcpy(heap, a, width);
-  } else {
-    memcpy(tmp, a, width);
+  while (width > 0) {
+    size_t chunk = width < sizeof(tmp) ? width : sizeof(tmp);
+    memcpy(tmp, a, chunk);
+    memcpy(a, b, chunk);
+    memcpy(b, tmp, chunk);
+    a += chunk;
+    b += chunk;
+    width -= chunk;
   }
-  memcpy(a, b, width);
-  memcpy(b, heap ? heap : tmp, width);
-  free(heap);
 }
 
 static void filc_qsort_impl(char *base, size_t nmemb, size_t width,

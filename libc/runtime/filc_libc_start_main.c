@@ -22,6 +22,7 @@
 │ plain for the yolo side, one pizlonated for this side), runs the deferred    │
 │ global constructors, and finally calls the user's main().                    │
 ╚─────────────────────────────────────────────────────────────────────────────*/
+#include "libc/calls/struct/utsname.h"
 #include "libc/dce.h"
 #include "libc/errno.h"
 #include "libc/intrin/atomic.h"
@@ -36,6 +37,9 @@
 
 /* Defined in libc/intrin/pagesize.c; cosmo only declares it internally. */
 void __pagesize_init(unsigned long *auxv);
+
+/* Defined in generated consts.c (filc/gen_shims.py). */
+void __filc_init_syscons(int os_idx);
 
 /* Fil-C land's own copy of the host os flag (the yolo copy lives in
    libc/sysv/hostos.S and is initialized by the yolo boot).  Declared non-const
@@ -112,6 +116,24 @@ static void filc_init_globals(char **argv, char **envp, size_t *auxv) {
 #if defined(__x86_64__)
   __filc_init_cpuids();
 #endif
+  /* Patch pizlonated .syscon globals to match the host OS (yolocosmo's
+     uname() always reports the real host kernel name in uts.sysname). */
+  struct utsname uts;
+  if (!zsys_uname(&uts)) {
+    int os_idx = 0;
+    if (!__builtin_strcmp(uts.sysname, "Darwin"))
+      os_idx = 1;
+    else if (!__builtin_strcmp(uts.sysname, "FreeBSD"))
+      os_idx = 2;
+    else if (!__builtin_strcmp(uts.sysname, "OpenBSD"))
+      os_idx = 3;
+    else if (!__builtin_strcmp(uts.sysname, "NetBSD"))
+      os_idx = 4;
+    else if (!__builtin_strcmp(uts.sysname, "Windows"))
+      os_idx = 5;
+    if (os_idx > 0)
+      __filc_init_syscons(os_idx);
+  }
   /* Cosmo's globals exist twice in the final binary: the plain copies that
      the yolo boot initialized (crt.S + _init blobs), and these pizlonated
      copies that only pizlonated code can see.  Re-derive the pizlonated ones

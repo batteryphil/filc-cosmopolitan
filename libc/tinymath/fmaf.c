@@ -65,42 +65,42 @@ __static_yoink("freebsd_libm_notice");
  */
 float fmaf(float x, float y, float z)
 {
-#if defined(__x86_64__) && defined(__FMA__)
+#if defined(__x86_64__) && defined(__FMA__) && !defined(__FILC__)
 
 	// Intel Haswell+ (c. 2013)
 	// AMD Piledriver+ (c. 2011)
 	asm("vfmadd132ss\t%1,%2,%0" : "+x"(x) : "x"(y), "x"(z));
 	return x;
 
-#elif defined(__x86_64__) && defined(__FMA4__)
+#elif defined(__x86_64__) && defined(__FMA4__) && !defined(__FILC__)
 
 	// AMD Bulldozer+ (c. 2011)
 	asm("vfmaddss\t%3,%2,%1,%0" : "=x"(x) : "x"(x), "x"(y), "x"(z));
 	return x;
 
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) && !defined(__FILC__)
 
 	asm("fmadd\t%s0,%s1,%s2,%s3" : "=w"(x) : "w"(x), "w"(y), "w"(z));
 	return x;
 
-#elif defined(__powerpc64__)
+#elif defined(__powerpc64__) && !defined(__FILC__)
 
 	asm("fmadds\t%0,%1,%2,%3" : "=f"(x) : "f"(x), "f"(y), "f"(z));
 	return x;
 
-#elif defined(__riscv) && __riscv_flen >= 32
+#elif defined(__riscv) && __riscv_flen >= 32 && !defined(__FILC__)
 
 	asm("fmadd.s\t%0,%1,%2,%3" : "=f"(x) : "f"(x), "f"(y), "f"(z));
 	return x;
 
-#elif defined(__s390x__)
+#elif defined(__s390x__) && !defined(__FILC__)
 
 	asm("maebr\t%0,%1,%2" : "+f"(z) : "f"(x), "f"(y));
 	return z;
 
 #else
 
-#ifdef __x86_64__
+#if defined(__x86_64__) && !defined(__FILC__)
 	if (X86_HAVE(FMA)) {
 		asm("vfmadd132ss\t%1,%2,%0" : "+x"(x) : "x"(y), "x"(z));
 		return x;

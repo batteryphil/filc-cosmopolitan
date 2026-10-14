@@ -22,6 +22,27 @@
 
 COSMOPOLITAN_C_START_
 
+#ifdef __FILC__
+#define CPUID4_ITERATE(I, FORM)                          \
+  do {                                                   \
+    uint32_t eax, Ebx, Ecx, Edx;                         \
+    if (KCPUIDS(0H, EAX) >= 4) {                         \
+      for (I = 0;; ++I) {                                \
+        asm("cpuid"                                      \
+            : "=a"(eax), "=b"(Ebx), "=c"(Ecx), "=d"(Edx) \
+            : "0"(4), "2"(I));                           \
+        (void)Ebx;                                       \
+        (void)Ecx;                                       \
+        (void)Edx;                                       \
+        if (CPUID4_CACHE_TYPE) {                         \
+          FORM;                                          \
+        } else {                                         \
+          break;                                         \
+        }                                                \
+      }                                                  \
+    }                                                    \
+  } while (0)
+#else
 #define CPUID4_ITERATE(I, FORM)                           \
   do {                                                    \
     uint32_t eax, Ebx, Ecx, Edx;                          \
@@ -44,6 +65,7 @@ COSMOPOLITAN_C_START_
       }                                                   \
     }                                                     \
   } while (0)
+#endif
 
 COSMOPOLITAN_C_END_
 #endif /* COSMOPOLITAN_LIBC_NEXGEN32E_CPUID4_H_ */

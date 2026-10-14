@@ -54,7 +54,7 @@ size_t _countbits(const void *a, size_t n) {
       }
       while (p + sizeof(long) <= e) {
         __builtin_memcpy(&Ai, p, 8);
-        asm("popcnt\t%1,%0" : "=r"(Ao) : "rm"(Ai) : "cc");
+        asm("popcnt\t%1,%0" : "=r"(Ao) : "r"(Ai) : "cc");
         p += sizeof(long);
         t += Ao;
       }

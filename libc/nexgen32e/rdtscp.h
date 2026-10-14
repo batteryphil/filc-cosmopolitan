@@ -33,6 +33,21 @@ COSMOPOLITAN_C_START_
 /**
  * Reads timestamp counter auxiliary model specific register value.
  */
+#ifdef __FILC__
+#define rdpid()                                                           \
+  ({                                                                      \
+    long Msr = -1;                                                        \
+    if (X86_HAVE(RDPID)) {                                                \
+      asm volatile("rdpid\t%0" : "=r"(Msr) : /* no inputs */ : "memory"); \
+    } else if (X86_HAVE(RDTSCP)) {                                        \
+      uint32_t Rax, Rdx, Ecx;                                             \
+      asm volatile("rdtscp"                                               \
+                   : "=d"(Rdx), "=a"(Rax), "=c"(Ecx));                    \
+      Msr = Ecx;                                                          \
+    }                                                                     \
+    Msr;                                                                  \
+  })
+#else
 #define rdpid()                                                           \
   ({                                                                      \
     long Msr;                                                             \
@@ -60,6 +75,7 @@ COSMOPOLITAN_C_START_
     }                                                                     \
     Msr;                                                                  \
   })
+#endif
 
 COSMOPOLITAN_C_END_
 #endif /* COSMOPOLITAN_LIBC_NEXGEN32E_RDTSCP_H_ */

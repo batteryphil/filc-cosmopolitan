@@ -19,7 +19,7 @@
 #include "libc/testlib/testlib.h"
 
 void testlib_clearxmmregisters(void) {
-#ifdef __x86_64__
+#if defined(__x86_64__) && !defined(__FILC__)
   asm("pxor\t%xmm0,%xmm0\n\t"
       "pxor\t%xmm1,%xmm1\n\t"
       "pxor\t%xmm2,%xmm2\n\t"

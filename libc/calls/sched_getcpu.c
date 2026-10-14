@@ -77,6 +77,7 @@ int sched_getcpu(void) {
 
 #ifdef __x86_64__
 
+#ifndef __FILC__
   if (IsLinux() || IsFreebsd()) {
     // Linux and FreeBSD both stuff TSC_AUX in the GDT so we can use this
     // ancient i8086 instruction to quickly retrieve the cpu id and node.
@@ -86,6 +87,7 @@ int sched_getcpu(void) {
     if (ok)
       return aux & 4095;
   }
+#endif
 
   if (IsLinux() || IsFreebsd() || IsWindows()) {
     // Only the Linux, FreeBSD, and Windows kernels can be counted upon
@@ -102,7 +104,7 @@ int sched_getcpu(void) {
     }
   }
 
-#elifdef __aarch64__
+#elif defined(__aarch64__) && !defined(__FILC__)
 
   if (IsLinux()) {
     // old linux or qemu-aarch64

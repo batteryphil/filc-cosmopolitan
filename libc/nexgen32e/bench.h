@@ -9,7 +9,10 @@
  * @see libc/testlib/bench.h
  */
 
-#ifdef __x86__
+#ifdef __FILC__
+#define __startbench() rdtsc()
+#define __endbench()   rdtsc()
+#elif defined(__x86__)
 #define __startbench()                            \
   ({                                              \
     uint64_t Ticks;                               \

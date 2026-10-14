@@ -71,7 +71,15 @@
 # All paths are resolved relative to this makefile (projects/usercosmo),
 # which `make -C projects/usercosmo -f filc.mk` makes the working directory.
 COSMO := $(CURDIR)
-ROOT := $(abspath $(COSMO)/../..)
+ifeq ($(wildcard $(abspath $(COSMO)/../..)/build/bin/clang),)
+ifneq ($(wildcard /data/fil-c/build/bin/clang),)
+ROOT ?= /data/fil-c
+else
+ROOT ?= $(abspath $(COSMO)/../..)
+endif
+else
+ROOT ?= $(abspath $(COSMO)/../..)
+endif
 
 # Target architecture (defaults to the host).  x86_64 is the host build and
 # installs into pizfix/lib; aarch64 is a cross build and installs into
@@ -193,7 +201,8 @@ SHIM_DEPS = \
 
 $(BUILD)/.shims.stamp: $(SHIM_DEPS)
 	@mkdir -p $(BUILD)
-	FILCARCH=$(FILCARCH) python3 $(COSMO)/filc/gen_shims.py $(BUILD)/shims.c $(BUILD)/consts.c
+	ROOT="$(ROOT)" COSMO="$(COSMO)" FILC_CLANG="$(FILC_CLANG)" PIZFIX="$(PIZFIX)" FILCARCH=$(FILCARCH) \
+	    python3 $(COSMO)/filc/gen_shims.py $(BUILD)/shims.c $(BUILD)/consts.c
 	@touch $@
 
 $(BUILD)/generated/shims.o: $(BUILD)/.shims.stamp $(FORCE_PREREQ) | check-env
@@ -367,6 +376,9 @@ EXCLUDE_FILES = \
 	libc/intrin/describefds.c \
 	libc/intrin/brain16.c \
 	libc/intrin/float16.c \
+	libc/intrin/feenableexcept.c \
+	libc/intrin/fedisableexcept.c \
+	libc/intrin/fegetexcept.c \
 	libc/intrin/leaklocks.c \
 	libc/intrin/demangle.c \
 	libc/intrin/tprecode8to16.c \
@@ -539,11 +551,13 @@ $(LIBDIR)/libc.a: $(OBJS) $(CCXX_OBJS) $(GEN_OBJS) | check-env
 	cd $(BUILD) && ar crs $(LIBDIR)/libc.a $(LIBC_A_OBJS)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5b. libm.a: cosmo folds all of libm into libc.a, but portable programs (and
-#     the test suite) link with -lm.  musl's flavor ships a real libm.a; give
-#     the cosmo flavor an empty one so that -lm resolves.
+# 5b. Stub archives (libm.a, libpthread.a, libdl.a, librt.a, libutil.a,
+#     libresolv.a): cosmo folds all of these into libc.a, but portable
+#     programs link with -lm, -lpthread, -ldl, -lrt, etc.  Give the cosmo
+#     flavor empty archives (like musl) so those flags resolve cleanly.
 # ─────────────────────────────────────────────────────────────────────────────
-$(LIBDIR)/libm.a: $(LIBDIR)/libc.a
+STUB_LIBS = $(addprefix $(LIBDIR)/,libm.a libpthread.a libdl.a librt.a libutil.a libresolv.a)
+$(STUB_LIBS): $(LIBDIR)/libc.a
 	@rm -f $@
 	ar crs $@
 
@@ -677,9 +691,9 @@ ifneq ($(FILCARCH),$(shell uname -m))
 # A cross build shares pizfix/include with the host build (cosmo's headers
 # are arch-neutral, see build_usercosmo.sh), so the headers only get
 # (re)installed by the host-arch build.
-INSTALL_TARGETS = $(LIBDIR)/libc.a $(LIBDIR)/libm.a $(LIBDIR)/crt1.o
+INSTALL_TARGETS = $(LIBDIR)/libc.a $(STUB_LIBS) $(LIBDIR)/crt1.o
 else
-INSTALL_TARGETS = $(LIBDIR)/libc.a $(LIBDIR)/libm.a $(LIBDIR)/crt1.o install-headers
+INSTALL_TARGETS = $(LIBDIR)/libc.a $(STUB_LIBS) $(LIBDIR)/crt1.o install-headers
 endif
 
 all install: check-env $(INSTALL_TARGETS)

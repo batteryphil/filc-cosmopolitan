@@ -60,9 +60,11 @@ void testlib_error_enter(const char *file, const char *func) {
     sys_getpid(); /* make strace easier to read */
   if (!IsWindows())
     sys_getpid();
+#ifndef __FILC__
   if (g_testlib_shoulddebugbreak) {
     DebugBreak();
   }
+#endif
   testlib_showerror_file = file;
   testlib_showerror_func = func;
 }

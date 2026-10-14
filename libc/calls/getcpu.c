@@ -96,6 +96,7 @@ int getcpu(unsigned *out_opt_cpu, unsigned *out_opt_node) {
 
 #ifdef __x86_64__
 
+#ifndef __FILC__
   if (IsLinux() || IsFreebsd()) {
     // Linux and FreeBSD both stuff TSC_AUX in the GDT so we can use this
     // ancient i8086 instruction to quickly retrieve the cpu id and node!
@@ -105,6 +106,7 @@ int getcpu(unsigned *out_opt_cpu, unsigned *out_opt_node) {
     if (ok)
       return getcpu_ia32_tsc_aux(out_opt_cpu, out_opt_node, aux);
   }
+#endif
 
   if (IsLinux() || IsFreebsd() || IsWindows()) {
     // Only the Linux, FreeBSD, and Windows kernels can be counted upon
@@ -121,7 +123,7 @@ int getcpu(unsigned *out_opt_cpu, unsigned *out_opt_node) {
     }
   }
 
-#elifdef __aarch64__
+#elif defined(__aarch64__) && !defined(__FILC__)
 
   if (IsLinux()) {
     // old linux or qemu-aarch64

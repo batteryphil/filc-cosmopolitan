@@ -124,6 +124,7 @@ static errno_t pthread_mutex_lock_recursive(pthread_mutex_t *mutex,
 }
 
 #if PTHREAD_USE_NSYNC
+static errno_t pthread_mutex_lock_recursive_nsync(pthread_mutex_t *);
 static inline errno_t pthread_mutex_lock_recursive_nsync_impl(
     pthread_mutex_t *mutex, bool is_trylock) {
   uint64_t word = atomic_load_explicit(&mutex->_word, memory_order_relaxed);
@@ -155,8 +156,12 @@ static inline errno_t pthread_mutex_lock_recursive_nsync_impl(
     word = MUTEX_UNLOCK(word);
     word = MUTEX_LOCK(word);
     word = MUTEX_SET_OWNER(word, me);
-    mutex->_word = word;
+    atomic_store_explicit(&mutex->_word, word, memory_order_release);
     mutex->_pid = __get_pib()->pid;
+    if (!is_trylock && !IsModeDbg()) {
+      __atomic_store_n(&mutex->_lock, pthread_mutex_lock_recursive_nsync,
+                       __ATOMIC_RELEASE);
+    }
     return 0;
   }
 }
@@ -180,12 +185,9 @@ dontinline static errno_t pthread_mutex_lock_impl(pthread_mutex_t *mutex,
       if (!is_trylock) {
         // common case no. 2
         // - recursive private nsync mutex lock
-        // Fil-C: this slot is read racily by the fast path in
-        // pthread_mutex_lock() below, so publish it atomically. Under Fil-C
-        // a pointer in memory is a (pointer, capability) pair and a torn
-        // pair would be a safety violation rather than a benign race.
-        __atomic_store_n(&mutex->_lock, pthread_mutex_lock_recursive_nsync,
-                         __ATOMIC_RELEASE);
+        // Fil-C: mutex->_lock is published inside
+        // pthread_mutex_lock_recursive_nsync_impl() after nsync_mu_lock()
+        // succeeds, avoiding a race on the (pointer, capability) slot.
         return pthread_mutex_lock_recursive_nsync(mutex);
       } else {
         return pthread_mutex_trylock_recursive_nsync(mutex);

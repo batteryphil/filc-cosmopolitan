@@ -47,6 +47,33 @@ static const char *DescribeReturnValue(char buf[30], int err, void **value) {
   return buf;
 }
 
+static errno_t _pthread_wait(struct PosixThread *pt, struct timespec *abstime) {
+  if (pt == (struct PosixThread *)__get_tls()->tib_pthread)
+    return EDEADLK;
+  errno_t err;
+  if ((err = pthread_testcancel_np()))
+    return err;
+  if (!abstime)
+    return 0;
+  if (abstime->tv_nsec < 0 || abstime->tv_nsec >= 1000000000)
+    return EINVAL;
+  atomic_int *ctid = &pt->tib->tib_ctid;
+  BEGIN_CANCELATION_POINT;
+  int x;
+  while ((x = atomic_load_explicit(ctid, memory_order_acquire))) {
+    int e = cosmo_futex_wait(ctid, x, true, CLOCK_REALTIME, abstime);
+    if (e == -ECANCELED) {
+      err = ECANCELED;
+      break;
+    } else if (e == -ETIMEDOUT) {
+      err = EBUSY;
+      break;
+    }
+  }
+  END_CANCELATION_POINT;
+  return err;
+}
+
 /**
  * Waits for thread to terminate.
  *
@@ -76,7 +103,6 @@ errno_t pthread_timedjoin_np(pthread_t thread, void **value_ptr,
   struct PosixThread *pt;
   enum PosixThreadStatus status;
   void *result = 0;
-  (void)abstime;
   pt = (struct PosixThread *)thread;
   unassert(thread);
 
@@ -92,24 +118,26 @@ errno_t pthread_timedjoin_np(pthread_t thread, void **value_ptr,
   // "The results of multiple simultaneous calls to pthread_join()
   //  specifying the same target thread are undefined."
   //                                  ──Quoth POSIX.1-2017
-  if (!zthread_join(pt->zthread, &result)) {
-    err = errno;
-  } else {
-    err = 0;
-    if (value_ptr)
-      *value_ptr = result;
-    if (atomic_load_explicit(&pt->pt_refs, memory_order_acquire)) {
-      _pthread_lock();
-      dll_remove(&_pthread_list, &pt->list);
-      dll_make_last(&_pthread_list, &pt->list);
-      atomic_store_explicit(&pt->pt_status, kPosixThreadZombie,
-                            memory_order_release);
-      _pthread_unlock();
+  if (!(err = _pthread_wait(pt, abstime))) {
+    if (!zthread_join(pt->zthread, &result)) {
+      err = errno;
     } else {
-      _pthread_lock();
-      dll_remove(&_pthread_list, &pt->list);
-      _pthread_unlock();
-      _pthread_free(pt);
+      err = 0;
+      if (value_ptr)
+        *value_ptr = result;
+      if (atomic_load_explicit(&pt->pt_refs, memory_order_acquire)) {
+        _pthread_lock();
+        dll_remove(&_pthread_list, &pt->list);
+        dll_make_last(&_pthread_list, &pt->list);
+        atomic_store_explicit(&pt->pt_status, kPosixThreadZombie,
+                              memory_order_release);
+        _pthread_unlock();
+      } else {
+        _pthread_lock();
+        dll_remove(&_pthread_list, &pt->list);
+        _pthread_unlock();
+        _pthread_free(pt);
+      }
     }
   }
 

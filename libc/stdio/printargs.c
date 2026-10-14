@@ -224,12 +224,18 @@ textstartup void __printargs(const char *prologue) {
   }
   if (X86_HAVE(HYPERVISOR)) {
     unsigned eax, ebx, ecx, edx;
+#ifdef __FILC__
+    asm("cpuid"
+        : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+        : "0"(0x40000000), "2"(0));
+#else
     asm("push\t%%rbx\n\t"
         "cpuid\n\t"
         "mov\t%%ebx,%1\n\t"
         "pop\t%%rbx"
         : "=a"(eax), "=rm"(ebx), "=c"(ecx), "=d"(edx)
         : "0"(0x40000000), "2"(0L));
+#endif
     PRINT("  Running inside %.4s%.4s%.4s (eax=%#x)", &ebx, &ecx, &edx, eax);
   }
   CPUID4_ITERATE(i, {

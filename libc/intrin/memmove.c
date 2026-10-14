@@ -23,6 +23,7 @@
 #include "libc/str/str.h"
 #ifndef __aarch64__
 
+#ifndef __FILC__
 typedef long long xmm_t __attribute__((__vector_size__(16), __aligned__(1)));
 typedef long long xmm_a __attribute__((__vector_size__(16), __aligned__(16)));
 
@@ -262,6 +263,7 @@ static __vex void *__memmove(void *dst, const void *src, size_t n) {
       return dst;
   }
 }
+#endif /* !__FILC__ */
 
 /**
  * Copies memory.
@@ -323,7 +325,12 @@ static __vex void *__memmove(void *dst, const void *src, size_t n) {
  * @asyncsignalsafe
  */
 void *memmove(void *dst, const void *src, size_t n) {
+#ifdef __FILC__
+  __builtin_memmove(dst, src, n);
+  return dst;
+#else
   return __memmove(dst, src, n);
+#endif
 }
 
 __weak_reference(memmove, memcpy);

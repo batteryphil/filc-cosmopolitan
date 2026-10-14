@@ -10,7 +10,7 @@ forceinline void repmovsb(void **dest, const void **src, size_t cx) {
   *dest = di, *src = si;
 }
 
-#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)) && !defined(__FILC__)
 #define repmovsb(DI, SI, CX)                                       \
   ({                                                               \
     void *Di = *(DI);                                              \

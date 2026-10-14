@@ -35,6 +35,7 @@ double g_avx2_juiceup_doubles_[4] forcealign(32);
 unsigned long long g_avx2_juiceup_quadwords_[4] forcealign(32);
 
 void testlib_benchwarmup(void) {
+#ifndef __FILC__
   /* get mathematical parts of cpu juiced up */
   if (X86_HAVE(AVX2) && X86_HAVE(FMA)) {
     asm("vmovdqa\t%1,%%ymm0\n\t"
@@ -50,6 +51,7 @@ void testlib_benchwarmup(void) {
         : "=m"(g_avx2_juiceup_doubles_)
         : "m"(g_avx2_juiceup_doubles_), "r"(&__executable_start[32]));
   }
+#endif
 }
 
 void EnableCruiseControlForCool(void) {

@@ -11,42 +11,90 @@
 │ hardware defaults to and what all of cosmo's own code assumes.               │
 ╚─────────────────────────────────────────────────────────────────────────────*/
 #include "libc/runtime/fenv.h"
-
-static uint16_t __filc_fenv_flags;
-static int __filc_fenv_round = FE_TONEAREST;
+#include "libc/thread/tls.h"
 
 int feclearexcept(int excepts) {
-  __filc_fenv_flags &= ~(uint16_t)excepts;
+  struct CosmoTib *tib = __get_tls();
+  tib->tib_fenv_flags &= ~(uint16_t)(excepts & FE_ALL_EXCEPT);
   return 0;
 }
 
 int fetestexcept(int excepts) {
-  return __filc_fenv_flags & (uint16_t)excepts;
+  struct CosmoTib *tib = __get_tls();
+  return tib->tib_fenv_flags & (uint16_t)(excepts & FE_ALL_EXCEPT);
 }
 
 int feraiseexcept(int excepts) {
-  __filc_fenv_flags |= (uint16_t)excepts;
+  struct CosmoTib *tib = __get_tls();
+  tib->tib_fenv_flags |= (uint16_t)(excepts & FE_ALL_EXCEPT);
+  return 0;
+}
+
+int fesetexceptflag(const fexcept_t *fp, int mask) {
+  if (!fp)
+    return -1;
+  struct CosmoTib *tib = __get_tls();
+  uint16_t m = (uint16_t)(mask & FE_ALL_EXCEPT);
+  tib->tib_fenv_flags = (tib->tib_fenv_flags & ~m) | ((uint16_t)(*fp) & m);
   return 0;
 }
 
 int fegetenv(fenv_t *envp) {
-  (void)envp;
+  if (!envp)
+    return -1;
+  struct CosmoTib *tib = __get_tls();
+  uintptr_t packed = ((uintptr_t)(uint32_t)tib->tib_fenv_round << 32) |
+                     ((uintptr_t)tib->tib_fenv_mask << 16) |
+                     (uintptr_t)tib->tib_fenv_flags;
+  *envp = (fenv_t)packed;
   return 0;
 }
 
 int fesetenv(const fenv_t *envp) {
-  /* FE_DFL_ENV (-1) means "restore the default environment"; any saved
-     environment is equivalent to the default one in our software model. */
-  (void)envp;
-  __filc_fenv_flags = 0;
-  __filc_fenv_round = FE_TONEAREST;
+  struct CosmoTib *tib = __get_tls();
+  if (envp == FE_DFL_ENV) {
+    tib->tib_fenv_flags = 0;
+    tib->tib_fenv_mask = 0;
+    tib->tib_fenv_round = FE_TONEAREST;
+    return 0;
+  }
+  if (!envp)
+    return -1;
+  uintptr_t packed = (uintptr_t)(*envp);
+  tib->tib_fenv_flags = (uint16_t)(packed & FE_ALL_EXCEPT);
+  tib->tib_fenv_mask = (uint16_t)((packed >> 16) & FE_ALL_EXCEPT);
+  tib->tib_fenv_round = (int32_t)(uint32_t)(packed >> 32);
   return 0;
 }
 
-
-
 int fegetround(void) {
-  return __filc_fenv_round;
+  struct CosmoTib *tib = __get_tls();
+  return tib->tib_fenv_round;
+}
+
+int __fesetround(int r) {
+  struct CosmoTib *tib = __get_tls();
+  tib->tib_fenv_round = r;
+  return 0;
+}
+
+int feenableexcept(int excepts) {
+  struct CosmoTib *tib = __get_tls();
+  int old = tib->tib_fenv_mask;
+  tib->tib_fenv_mask |= (uint16_t)(excepts & FE_ALL_EXCEPT);
+  return old;
+}
+
+int fedisableexcept(int excepts) {
+  struct CosmoTib *tib = __get_tls();
+  int old = tib->tib_fenv_mask;
+  tib->tib_fenv_mask &= ~(uint16_t)(excepts & FE_ALL_EXCEPT);
+  return old;
+}
+
+int fegetexcept(void) {
+  struct CosmoTib *tib = __get_tls();
+  return tib->tib_fenv_mask;
 }
 
 

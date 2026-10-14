@@ -9,7 +9,7 @@ forceinline void *repstosb(void *dest, unsigned char al, size_t cx) {
   return di;
 }
 
-#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)) && !defined(__FILC__)
 #define repstosb(DI, AL, CX)                         \
   ({                                                 \
     void *Di = (DI);                                 \
