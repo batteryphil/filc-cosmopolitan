@@ -1,16 +1,54 @@
-ISC License
+MIT / ISC / BSD-2-Clause Open-Source License & Attribution Notice
+==================================================================
 
-Copyright 2020 Justine Alexandra Roberts Tunney
+This repository combines original integration engineering by Philip Bartsch
+(@batteryphil) with two foundational upstream open-source projects (Fil-C and
+Cosmopolitan Libc). Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that credit and copyright notices
+for all three parties below are retained in all copies or substantial portions
+of the Software:
 
-Permission to use, copy, modify, and/or distribute this software for
-any purpose with or without fee is hereby granted, provided that the
-above copyright notice and this permission notice appear in all copies.
+1. Fil-C + Cosmopolitan Integration, Runtime Bridge & APE Toolchain
+   (--filc-cosmo, --filc-ape, filc_cosmo_bridge, build & verification suite)
+   Copyright (c) 2026 Philip Bartsch (batteryphil)
+   (Developed with AI pair-programming assistance from Google DeepMind Antigravity)
+   Repository: https://github.com/batteryphil/filc-cosmopolitan
+   License: MIT / ISC License
 
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
-WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
-AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
-PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
+2. Fil-C (InvisiCaps Memory-Safe C/C++ Compiler, Runtime & libpas)
+   Copyright (c) 2026 Filip Pizlo. All Rights Reserved.
+   Copyright (c) 2023-2026 Epic Games, Inc. All Rights Reserved.
+   Copyright (c) 2018-2022 Apple Inc. All rights reserved.
+   Upstream Repository: https://github.com/pizlonator/fil-c
+   License: BSD 2-Clause License & Apache 2.0 License with LLVM Exceptions
+
+3. Cosmopolitan Libc (Actually Portable Executable / APE C Library)
+   Copyright (c) 2020-2026 Justine Alexandra Roberts Tunney
+   Upstream Repository: https://github.com/jart/cosmopolitan
+   License: ISC License
+
+------------------------------------------------------------------------------
+MIT License (Applies to all original integration work by Philip Bartsch)
+------------------------------------------------------------------------------
+
+Copyright (c) 2026 Philip Bartsch (batteryphil)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice, the upstream attribution notices for Fil-C (Filip
+Pizlo) and Cosmopolitan Libc (Justine Alexandra Roberts Tunney), and this
+permission notice shall be included in all copies or substantial portions of
+the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
